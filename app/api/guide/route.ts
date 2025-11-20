@@ -31,15 +31,25 @@ export async function POST(req: NextRequest) {
 
     const normalizedGameName = gameName.trim()
 
-    // 1. 检查 Supabase 缓存（不区分大小写）
-    const { data: cachedGuide, error: queryError } = await supabaseAdmin
-      .from('game_guides')
-      .select('id, game_name, content, created_at')
-      .ilike('game_name', normalizedGameName)
-      .maybeSingle()
+    // 检查 Supabase 配置
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    if (queryError) {
-      console.error('查询 Supabase 缓存时出错:', queryError)
+    // 1. 检查 Supabase 缓存（不区分大小写）
+    // 只有在配置了 Supabase 的情况下才查询缓存
+    let cachedGuide = null
+    if (supabaseUrl && supabaseKey) {
+      const { data, error: queryError } = await supabaseAdmin
+        .from('game_guides')
+        .select('id, game_name, content, created_at')
+        .ilike('game_name', normalizedGameName)
+        .maybeSingle()
+      
+      if (queryError) {
+        console.error('查询 Supabase 缓存时出错:', queryError)
+      } else {
+        cachedGuide = data
+      }
     }
 
     // 2. 如果找到缓存，直接返回
@@ -102,22 +112,25 @@ Use clear Markdown formatting with lists, bold text, and emojis to make it visua
     }
 
     // 4. 保存到 Supabase（使用 upsert 避免重复）
-    const { error: insertError } = await supabaseAdmin
-      .from('game_guides')
-      .upsert(
-        {
-          game_name: normalizedGameName,
-          content: generatedContent,
-          created_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'game_name',
-        }
-      )
+    // 只有在配置了 Supabase 的情况下才保存
+    if (supabaseUrl && supabaseKey) {
+      const { error: insertError } = await supabaseAdmin
+        .from('game_guides')
+        .upsert(
+          {
+            game_name: normalizedGameName,
+            content: generatedContent,
+            created_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'game_name',
+          }
+        )
 
-    if (insertError) {
-      console.error('保存到 Supabase 时出错:', insertError)
-      // 即使保存失败，也返回生成的内容
+      if (insertError) {
+        console.error('保存到 Supabase 时出错:', insertError)
+        // 即使保存失败，也返回生成的内容
+      }
     }
 
     // 5. 返回生成的内容
