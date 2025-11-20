@@ -1,0 +1,1 @@
+from @ai-sdk/deepseek import deepseek

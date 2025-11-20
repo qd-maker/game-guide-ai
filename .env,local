@@ -1,0 +1,8 @@
+# .env.local
+
+# DeepSeek API Key (从 DeepSeek 开放平台获取)
+DEEPSEEK_API_KEY=sk-75b89592b12e46fa8928736336217e9a
+
+# Supabase 配置 (从 Supabase 项目设置 -> API 获取)
+NEXT_PUBLIC_SUPABASE_URL=https://iotavlgqnpmxbkfhsgfj.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_N434I2u5W04fnP5oRzDRnA_AtQCKZ4I
