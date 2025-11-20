@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+# game-guide-ai
+>>>>>>> 066f00576bdb97e51e49218c27abeaa805475c43
 # 🎮 AI Game Guide Assistant
 
 <div align="center">
@@ -355,8 +359,13 @@ This project demonstrates:
 
 **Project Repository**: [GitHub](https://github.com/qd-maker/game-guide-ai)
 
+<<<<<<< HEAD
 **LinkedIn**: [Your LinkedIn Profile]  
 **Email**: [Your Email Address]  
+=======
+**LinkedIn**: [[Your LinkedIn Profile](https://www.linkedin.com/jobs/)]  
+**Email**: [[Your Email Address](www.qiduan332@gmail,com)]
+>>>>>>> 066f00576bdb97e51e49218c27abeaa805475c43
 **Portfolio**: [Your Portfolio Website]
 
 ---
@@ -578,8 +587,13 @@ pnpm dev
 
 **项目仓库**: [GitHub](https://github.com/qd-maker/game-guide-ai)
 
+<<<<<<< HEAD
 **LinkedIn**: [您的 LinkedIn 个人资料]  
 **邮箱**: [您的邮箱地址]  
+=======
+**LinkedIn**: [[您的 LinkedIn 个人资料](https://www.linkedin.com/jobs/)]  
+**邮箱**: [[您的邮箱地址](www.1550100326@qq.com)]
+>>>>>>> 066f00576bdb97e51e49218c27abeaa805475c43
 **作品集**: [您的作品集网站]
 
 ---
@@ -591,3 +605,7 @@ pnpm dev
 **为远程工作和国际化机会而打造** 🌍
 
 </div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> 066f00576bdb97e51e49218c27abeaa805475c43
