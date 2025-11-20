@@ -356,8 +356,8 @@ This project demonstrates:
 
 **Project Repository**: [GitHub](https://github.com/qd-maker/game-guide-ai)
 
-**LinkedIn**: [Your LinkedIn Profile]  
-**Email**: [Your Email Address]  
+**LinkedIn**: [[Your LinkedIn Profile](https://www.linkedin.com/jobs/)]  
+**Email**: [[Your Email Address](www.qiduan332@gmail,com)]
 **Portfolio**: [Your Portfolio Website]
 
 ---
@@ -579,8 +579,8 @@ pnpm dev
 
 **项目仓库**: [GitHub](https://github.com/qd-maker/game-guide-ai)
 
-**LinkedIn**: [您的 LinkedIn 个人资料]  
-**邮箱**: [您的邮箱地址]  
+**LinkedIn**: [[您的 LinkedIn 个人资料](https://www.linkedin.com/jobs/)]  
+**邮箱**: [[您的邮箱地址](www.1550100326@qq.com)]
 **作品集**: [您的作品集网站]
 
 ---
