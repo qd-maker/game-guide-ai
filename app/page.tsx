@@ -1,25 +1,28 @@
 "use client"
 
-import { Search, Gamepad2, Sparkles, ChevronRight, Terminal, AlertCircle } from 'lucide-react'
+import { Search, Gamepad2, Sparkles, ChevronRight, Terminal, AlertCircle, ChevronDown } from 'lucide-react'
 import { useRef, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import ReactMarkdown from 'react-markdown'
 
-interface GuideResponse {
-  content: string
-  cached: boolean
-  gameName: string
-  createdAt: string
+interface RAGResponse {
+  answer: string
+  relevant_chunks: string[]
+  source: string  // "rag" 或 "llm_generated" 或 "llm_general"
+  game_name?: string  // 检测到的游戏名称
 }
 
 export default function GameGuidePage() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [guideContent, setGuideContent] = useState<string | null>(null)
+  const [answer, setAnswer] = useState<string | null>(null)
+  const [relevantChunks, setRelevantChunks] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [isCached, setIsCached] = useState(false)
+  const [source, setSource] = useState<string | null>(null)
+  const [gameName, setGameName] = useState<string | null>(null)
+  const [showChunks, setShowChunks] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -28,45 +31,53 @@ export default function GameGuidePage() {
   }
 
   useEffect(() => {
-    if (guideContent) {
+    if (answer) {
       scrollToBottom()
     }
-  }, [guideContent])
+  }, [answer])
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault()
     
     if (!input.trim() || isLoading) return
 
-    const gameName = input.trim()
+    const question = input.trim()
     setIsLoading(true)
     setError(null)
-    setGuideContent(null)
-    setIsCached(false)
+    setAnswer(null)
+    setRelevantChunks([])
+    setSource(null)
+    setGameName(null)
+    setShowChunks(false)
 
     try {
-      const response = await fetch('/api/guide', {
+      const response = await fetch('/api/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ gameName }),
+        body: JSON.stringify({ 
+          question,
+          top_k: 3 
+        }),
       })
 
-      const data: GuideResponse = await response.json()
+      const data: RAGResponse = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP 错误! 状态码: ${response.status}`)
+        throw new Error((data as any).error || `HTTP 错误! 状态码: ${response.status}`)
       }
 
-      setGuideContent(data.content)
-      setIsCached(data.cached)
+      setAnswer(data.answer)
+      setRelevantChunks(data.relevant_chunks || [])
+      setSource(data.source || 'rag')
+      setGameName(data.game_name || null)
     } catch (err) {
-      console.error('获取游戏指南时出错:', err)
+      console.error('获取回答时出错:', err)
       setError(
         err instanceof Error 
           ? err.message 
-          : '无法获取游戏指南，请稍后重试'
+          : '无法获取回答，请确保 FastAPI 服务正在运行 (http://localhost:8000)'
       )
     } finally {
       setIsLoading(false)
@@ -112,13 +123,13 @@ export default function GameGuidePage() {
             <span>Next-Gen Strategy Guides</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight lg:text-7xl glow-text">
-            Master Any Game <br />
+            RAG 游戏攻略助手 <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-cyan-400">
-              Instantly
+              智能问答
             </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Enter a game title below and let our AI generate a comprehensive strategy guide, tips, and walkthroughs in seconds.
+            基于游戏攻略内容，智能回答你的问题。输入你的问题，获取准确的攻略答案。
           </p>
         </div>
 
@@ -135,7 +146,7 @@ export default function GameGuidePage() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Enter game name (e.g., Elden Ring, Cyberpunk 2077)..."
+              placeholder="输入你的问题，例如：如何开始游戏？怎么升级？如何救出公主？"
               className="h-14 pl-12 pr-4 rounded-xl border-border/50 bg-background/90 backdrop-blur-xl text-lg shadow-xl focus-visible:ring-primary/50 transition-all"
             />
             <div className="absolute right-2">
@@ -153,7 +164,7 @@ export default function GameGuidePage() {
                   </span>
                 ) : (
                   <span className="flex items-center">
-                    Generate Guide <ChevronRight className="ml-1 h-4 w-4" />
+                    提问 <ChevronRight className="ml-1 h-4 w-4" />
                   </span>
                 )}
               </Button>
@@ -175,69 +186,88 @@ export default function GameGuidePage() {
         )}
 
         {/* Results Area */}
-        {(guideContent || isLoading) && (
+        {(answer || isLoading) && (
           <div className="w-full max-w-4xl mt-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex items-center gap-2 mb-4 text-muted-foreground text-sm uppercase tracking-wider font-semibold">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm uppercase tracking-wider font-semibold">
               <Terminal className="h-4 w-4" />
-              <span>Generated Guide</span>
-              {isCached && (
-                <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs normal-case">
-                  缓存
+                <span>
+                  {source === 'rag' ? 'RAG 回答' : source === 'llm_generated' ? 'LLM 生成攻略' : 'LLM 通用回答'}
                 </span>
+              </div>
+              {gameName && (
+                <div className="text-sm text-primary font-medium">
+                  🎮 游戏: {gameName}
+                </div>
+              )}
+              {source === 'llm_generated' && (
+                <div className="text-xs text-green-500 font-medium">
+                  ✅ 已保存到 Supabase
+                </div>
               )}
             </div>
             
             <Card className="bg-card/50 backdrop-blur-sm border-primary/10 overflow-hidden shadow-2xl glow-box">
               <div className="p-6 md:p-10 prose prose-invert prose-headings:text-primary prose-a:text-cyan-400 prose-strong:text-foreground max-w-none">
-                {guideContent ? (
+                {answer ? (
+                  <div className="space-y-6">
+                    {/* 回答内容 */}
                   <div className="leading-relaxed markdown-content">
+                      <h3 className="text-xl font-semibold mb-3 text-primary">回答：</h3>
+                      <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
                     <ReactMarkdown
                       components={{
-                      h1: ({ children }) => (
-                        <h1 className="text-3xl font-bold mb-4 mt-6 text-primary">
-                          {children}
-                        </h1>
-                      ),
-                      h2: ({ children }) => (
-                        <h2 className="text-2xl font-semibold mb-3 mt-5 text-primary">
-                          {children}
-                        </h2>
-                      ),
-                      h3: ({ children }) => (
-                        <h3 className="text-xl font-semibold mb-2 mt-4 text-foreground">
-                          {children}
-                        </h3>
-                      ),
-                      ul: ({ children }) => (
-                        <ul className="list-disc list-inside mb-4 space-y-2">
-                          {children}
-                        </ul>
-                      ),
-                      ol: ({ children }) => (
-                        <ol className="list-decimal list-inside mb-4 space-y-2">
-                          {children}
-                        </ol>
-                      ),
-                      li: ({ children }) => (
-                        <li className="ml-4">{children}</li>
-                      ),
                       p: ({ children }) => (
-                        <p className="mb-4 leading-relaxed">{children}</p>
+                              <p className="mb-2 leading-relaxed">{children}</p>
                       ),
                       strong: ({ children }) => (
                         <strong className="font-semibold text-foreground">
                           {children}
                         </strong>
                       ),
-                      code: ({ children }) => (
-                        <code className="px-1.5 py-0.5 rounded bg-muted text-sm font-mono">
+                            ul: ({ children }) => (
+                              <ul className="list-disc list-inside mb-2 space-y-1">
                           {children}
-                        </code>
+                              </ul>
+                            ),
+                            li: ({ children }) => (
+                              <li className="ml-4">{children}</li>
                       ),
                     }}
                     >
-                      {guideContent}
+                          {answer}
                     </ReactMarkdown>
+                      </div>
+                    </div>
+
+                    {/* 相关段落 */}
+                    {relevantChunks.length > 0 && (
+                      <div className="mt-6">
+                        <button
+                          type="button"
+                          onClick={() => setShowChunks((prev) => !prev)}
+                          className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                        >
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-200 ${showChunks ? 'rotate-180' : ''}`}
+                          />
+                          {showChunks ? '收起相关攻略段落' : '展开相关攻略段落'}
+                        </button>
+                        {showChunks && (
+                          <div className="space-y-3 mt-3">
+                            {relevantChunks.map((chunk, index) => (
+                              <div
+                                key={index}
+                                className="p-3 bg-muted/30 rounded-lg border border-border/50 text-sm"
+                              >
+                                <span className="text-primary font-medium">段落 {index + 1}:</span>{' '}
+                                <span className="text-muted-foreground">{chunk}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4 animate-pulse">
@@ -253,7 +283,7 @@ export default function GameGuidePage() {
               
               {/* Footer of card */}
               <div className="bg-muted/30 px-6 py-3 border-t border-border/50 flex justify-between items-center text-xs text-muted-foreground">
-                <span>AI-Generated Content</span>
+                <span>基于 RAG 系统生成</span>
                 <div className="flex gap-2">
                   <span className="h-2 w-2 rounded-full bg-green-500/50" />
                   <span>System Online</span>
@@ -264,7 +294,7 @@ export default function GameGuidePage() {
         )}
 
         {/* Empty State / Features */}
-        {!guideContent && !isLoading && !error && (
+        {!answer && !isLoading && !error && (
           <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
             {[
               {
